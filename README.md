@@ -16,17 +16,33 @@ Quickly generate a well-structured TypeScript CLI project with best practices bu
 ## Installation
 
 ```bash
-npm install -g bricklayer
+npm install -g @tukuyomil032/bricklayer
+
 # or
-pnpm add -g bricklayer
+pnpm add -g @tukuyomil032/bricklayer
+
 # or
-yarn global add bricklayer
+yarn global add @tukuyomil032/bricklayer
+
+# or
+bun add -g @tukuyomil032/bricklayer
 ```
 
 ## Usage
 
 ```bash
+# When treating the current directory during command execution as the project's root folder:
 bricklayer create
+
+# If you want to specify the project's root folder yourself (we generally recommend using this option):
+# Use the arrow keys (up and down) and the Enter key to navigate to the project's root folder.
+bricklayer create -d
+
+# You can also specify a project folder directly by entering a relative path after the `-d` option.
+bricklayer create -d ~/Documents/dev/CLI/my-test-project
+
+# available aliases
+bl create
 ```
 
 Follow the interactive prompts to configure your project:
@@ -34,8 +50,10 @@ Follow the interactive prompts to configure your project:
 - Project name
 - Module system (ESM / CommonJS)
 - Package manager
+- Automatically install dependencies(create lockfile)
 - Git repository details
 - Optional tools (Prettier, ESLint)
+- husky(pre-commit, pre-push)
 
 ## Generated Project Structure
 
@@ -45,7 +63,7 @@ your-cli/
 │   ├── commands/
 │   │   └── hello.ts
 │   └── index.ts
-├── .husky/
+├── .husky/ #options
 │   ├── pre-commit
 │   └── pre-push
 ├── .gitignore

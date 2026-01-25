@@ -17,37 +17,34 @@ export function createCommand(): Command {
   cmd.action(async (options) => {
     console.log(chalk.green('Welcome to bricklayer — TypeScript CLI scaffold generator'));
 
-    // Show spinner
     const initSpinner = ora('Initializing project setup...').start();
 
-    // Small delay for better UX
     await new Promise((resolve) => setTimeout(resolve, 500));
     initSpinner.stop();
 
-    // Determine destination behavior
     const flagProvided = Boolean(options.destination);
     const flagHasArg = typeof options.destination === 'string';
     const askDestination = flagProvided && !flagHasArg;
-
-    // Prompt once: if -d present, always skip the `name` question; if -d without arg, also ask destination interactively first
     const answers = await promptProjectDetails({ skipName: flagProvided, askDestination });
 
-    // Resolve target directory
     let target: string;
     if (flagHasArg) {
       const dest = (options.destination as string).replace(/^~/, os.homedir());
       target = path.resolve(dest);
-      if (!answers.name) answers.name = path.basename(target);
+      if (!answers.name) {
+        answers.name = path.basename(target);
+      }
     } else if (answers.destination) {
       const dest = answers.destination.replace(/^~/, os.homedir());
       target = path.resolve(dest);
-      if (!answers.name) answers.name = path.basename(target);
+      if (!answers.name) {
+        answers.name = path.basename(target);
+      }
     } else {
       const baseDir = process.cwd();
       target = path.resolve(baseDir, answers.name);
     }
 
-    // Fetch latest package versions
     const versionSpinner = ora('Fetching latest package versions...').start();
     let versions: Record<string, string> | undefined;
     try {
@@ -64,14 +61,12 @@ export function createCommand(): Command {
       await writeProjectFiles(target, answers, versions);
       fileSpinner.succeed('Project scaffold created at ' + target);
 
-      // Install dependencies if user opted in
       if (answers.autoInstall) {
         await installDependencies(target, answers.packageManager);
       } else {
         console.log(chalk.yellow('Dependencies were not installed automatically.'));
       }
 
-      // Show next steps
       console.log(chalk.blue('Next steps:'));
       console.log(`  - cd ${answers.name}`);
       const buildCmd =

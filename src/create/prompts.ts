@@ -96,10 +96,8 @@ export async function promptProjectDetails(
   const totalQuestions = questions.length;
   const answers: Partial<ProjectAnswers & { destination?: string }> = {};
 
-  console.log(''); // Blank line before prompts
+  console.log('');
 
-  // Use Inquirer's BottomBar to render a single, updatable status line
-  // so prompts and their own multi-line UIs do not cause duplicate progress lines.
   type BottomBar = { updateBottomBar: (s: string) => void; close: () => void };
   type InquirerWithUI = { ui?: { BottomBar?: new () => BottomBar } };
   const uiWith = inquirer as unknown as InquirerWithUI;
@@ -114,24 +112,20 @@ export async function promptProjectDetails(
       bottomBar.updateBottomBar(progressLine);
     } catch (err) {
       void err;
-      // fallback: write using readline
       readline.clearLine(process.stdout, 0);
       readline.cursorTo(process.stdout, 0);
       process.stdout.write(progressLine + '\n');
     }
   };
 
-  // Compute effective total: subtract skipped name, add destination prompt if requested
   const effectiveTotal = totalQuestions - (opts.skipName ? 1 : 0) + (opts.askDestination ? 1 : 0);
   let progressCount = 0;
   updateProgress(progressCount);
 
-  // If askDestination is requested, prompt for it first using an interactive tree navigator
   if (opts.askDestination) {
     const chooseDirectoryInteractive = async (startDir: string) => {
       let current = startDir;
       while (true) {
-        // list visible directories (exclude hidden)
         let entries: string[] = [];
         try {
           entries = fs.readdirSync(current).filter((name) => {
@@ -151,17 +145,13 @@ export async function promptProjectDetails(
           ...entries.map((e) => ({ display: e + path.sep, value: e })),
         ];
 
-        // Add a small circle at the start of each displayed choice to indicate it's selectable
         choices.forEach((c) => {
           c.display = `◯ ${c.display}`;
         });
 
-        // Enquirer expects choice objects with `name` (unique id) and `message` (display)
         const select = new Select({
           name: 'dir',
           message: `destination: (navigate folders, Enter to choose)`,
-          // Enquirer Select returns the `name` of the chosen item.
-          // Use `name` as the internal id (value) and `message` for display.
           choices: choices.map((c) => ({ name: c.value, message: c.display })),
           pageSize: 15,
         });
@@ -169,7 +159,6 @@ export async function promptProjectDetails(
         try {
           val = await select.run();
         } catch (err) {
-          // Enquirer may throw when TTY not available; surface a friendly error
           console.error(
             'Selection aborted or failed:',
             err instanceof Error ? err.message : String(err)
@@ -177,7 +166,6 @@ export async function promptProjectDetails(
           throw err;
         }
         if (val === '__SELECT__') {
-          // Use Enquirer's Input so the default/current path is actual editable text
           while (true) {
             const input = new Input({
               message: 'destination: (edit or accept)',
@@ -203,27 +191,30 @@ export async function promptProjectDetails(
                 ],
               },
             ]);
-            if (confirm.confirmSel === 'confirm') return proposed;
-            if (confirm.confirmSel === 'reenter') continue;
-            if (confirm.confirmSel === 'back') break; // return to navigation
+            if (confirm.confirmSel === 'confirm') {
+              return proposed;
+            }
+            if (confirm.confirmSel === 'reenter') {
+              continue;
+            }
+            if (confirm.confirmSel === 'back') {
+              break;
+            }
           }
           continue;
         }
         if (val === '__UP__') {
           const parent = path.dirname(current);
           if (parent === current) {
-            // already root
             continue;
           }
           current = parent;
           continue;
         }
-        // descend into selected subdirectory
         current = path.join(current, val);
       }
     };
 
-    // Count the destination question once and show progress before navigation
     progressCount++;
     updateProgress(progressCount);
 
@@ -234,19 +225,16 @@ export async function promptProjectDetails(
     }
   }
 
-  // Build list of questions to ask (skip name if requested)
   const toAsk = opts.skipName ? questions.slice(1) : questions.slice();
   for (let i = 0; i < toAsk.length; i++) {
     const question = toAsk[i];
 
-    // Update the single progress bottom bar just before each prompt
     progressCount++;
     updateProgress(progressCount);
 
     const answer = await inquirer.prompt<Record<string, unknown>>([question]);
     Object.assign(answers, answer as Record<string, unknown>);
 
-    // Display selected value in color for clarity (above the bottom bar)
     const key = question.name as string;
     const val = answer[key] as unknown;
     if (typeof val === 'string') {
@@ -258,7 +246,6 @@ export async function promptProjectDetails(
     }
   }
 
-  // Finalize progress
   updateProgress(effectiveTotal);
   try {
     bottomBar.updateBottomBar(
@@ -268,7 +255,7 @@ export async function promptProjectDetails(
   } catch (err) {
     void err;
   }
-  console.log(''); // Blank line after completion
+  console.log('');
 
   return answers as ProjectAnswers;
 }

@@ -213,9 +213,8 @@ export function generatePackageJson(answers: ProjectAnswers, versions?: Record<s
     return `${m} run build`;
   }
 
-  const prepareScript = (answers as ProjectAnswers).useHusky
-    ? `husky install && ${buildCmdForManager(mgr)}`
-    : buildCmdForManager(mgr);
+  // When Husky is enabled, keep prepare as just 'husky' (user requested).
+  const prepareScript = (answers as ProjectAnswers).useHusky ? 'husky' : buildCmdForManager(mgr);
 
   return {
     name: answers.npmPackageName || answers.name,
@@ -239,6 +238,7 @@ export function generatePackageJson(answers: ProjectAnswers, versions?: Record<s
         typecheck: 'tsc --noEmit',
         lint: 'eslint "src/**/*.ts"',
         'lint:fix': 'eslint "src/**/*.ts" --fix',
+        'lint-staged': 'lint-staged',
         format: 'prettier --write "src/**/*.ts"',
         'format:check': 'prettier --check "src/**/*.ts"',
       },
@@ -377,26 +377,41 @@ export function generateEslintConfig() {
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import json from '@eslint/json';
-import { defineConfig } from 'eslint/config';
 
-export default defineConfig({
-  ignores: ['dist/'],
-  overrides: [
-    {
-      files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
-      plugins: { js },
-      extends: ['js/recommended'],
-      languageOptions: { globals: globals.node },
+export default [
+  {
+    ignores: ['dist/**'],
+  },
+
+  {
+    files: ['**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: globals.node,
     },
-    Object.assign({ files: ['**/*.{ts,mts,cts}'] }, tseslint.configs.recommended),
-    {
-      files: ['**/*.json'],
-      plugins: { json },
-      language: 'json/json',
-      extends: ['json/recommended'],
+    ...js.configs.recommended,
+  },
+
+  {
+    files: ['**/*.{ts,mts,cts}'],
+    languageOptions: {
+      globals: globals.node,
+      parser: tseslint.parser,
     },
-  ],
-});
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+    },
+    rules: {
+      ...tseslint.configs.recommended.rules,
+    },
+  },
+
+  {
+    files: ['**/*.json'],
+    language: 'json/json',
+    plugins: { json },
+    ...json.configs.recommended,
+  },
+];
 `;
 }
 
@@ -432,5 +447,3 @@ export async function generateLicenseText(
     .replace(fullnameRegex, author)
     .replace(nameRegex, author);
 }
-
-// Note: .eslintignore generation removed in favor of eslint.config.js ignores

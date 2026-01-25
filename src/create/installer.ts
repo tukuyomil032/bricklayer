@@ -34,7 +34,6 @@ export async function installDependencies(
   if (!(await isCommandAvailable(bin))) {
     spinner.fail(`${bin} not found on PATH.`);
 
-    // Try sensible fallback order
     const fallbacks = ['pnpm', 'npm'];
     let usedFallback: string | null = null;
     for (const f of fallbacks) {
@@ -89,24 +88,20 @@ function runCommandWithProgress(command: string, cwd: string): Promise<void> {
 
     bar.start(100, 0);
 
-    // Progress state
     let progress = 0;
     let lastRenderedFloor = 0;
     const start = Date.now();
 
-    // Interval drives internal progress target; we only redraw when integer percent changes
     let lastOutputAt = 0;
-    const tickInterval = 150; // ms
-    const maxHold = 95; // hold at 95% until process completes
+    const tickInterval = 150;
+    const maxHold = 95;
 
     const timer = setInterval(() => {
       const elapsed = Date.now() - start;
-      // Ease-out target that slowly approaches maxHold
       const target = maxHold * (1 - Math.exp(-elapsed / 6000));
-      // Advance progress a bit toward target, ensuring monotonic increase
-      // If we've recently seen installer output, move faster
       const sinceOutput = lastOutputAt ? Date.now() - lastOutputAt : Infinity;
       const speedMultiplier = sinceOutput < 1000 ? 2.0 : 1.0;
+
       progress = Math.min(target, progress + 0.6 * speedMultiplier);
       const floor = Math.floor(progress);
       if (floor > lastRenderedFloor) {
@@ -123,10 +118,11 @@ function runCommandWithProgress(command: string, cwd: string): Promise<void> {
     const stderrChunks: Buffer[] = [];
     const onOutput = () => {
       lastOutputAt = Date.now();
-      // Aggressively advance progress toward maxHold on real installer output
       const remaining = maxHold - progress;
-      if (remaining <= 0) return;
-      // Add a chunk that's a fraction of the remaining, clamped
+      if (remaining <= 0) {
+        return;
+      }
+
       const advance = Math.min(remaining, Math.max(4, Math.round(remaining * 0.18)));
       progress = progress + advance;
       const floor = Math.floor(progress);
@@ -160,7 +156,6 @@ function runCommandWithProgress(command: string, cwd: string): Promise<void> {
     child.on('close', (code) => {
       clearInterval(timer);
 
-      // Smoothly ramp to 100% to avoid a sudden jump
       const finishInterval = 40; // ms
       const finishTimer = setInterval(() => {
         const remaining = 100 - progress;
@@ -170,13 +165,16 @@ function runCommandWithProgress(command: string, cwd: string): Promise<void> {
             bar.stop();
           } catch {}
           clearInterval(finishTimer);
-          if (code === 0) return resolve();
+
+          if (code === 0) {
+            return resolve();
+          }
           const out = Buffer.concat(stdoutChunks).toString('utf8');
           const errOut = Buffer.concat(stderrChunks).toString('utf8');
           const e = new Error(`Command exited with code ${code}\n${errOut || out}`);
           return reject(e);
         }
-        // advance by a fraction of remaining to create ease-out
+
         progress = progress + Math.max(1, Math.round(remaining * 0.18));
         const floor = Math.floor(progress);
         if (floor > lastRenderedFloor) {

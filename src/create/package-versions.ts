@@ -38,7 +38,6 @@ export async function getLatestVersions() {
     'chalk',
     'ora',
     'yargs',
-    // include package manager packages to record their latest versions
     'pnpm',
     'npm',
     'yarn',
@@ -53,7 +52,6 @@ export async function getLatestVersions() {
         try {
           versions[pkg] = await fetchLatestVersion(pkg);
         } catch (err) {
-          // Fallback to a reasonable default if fetch fails
           console.warn(`Failed to fetch version for ${pkg}, using fallback:`, err);
           versions[pkg] = 'latest';
         }
