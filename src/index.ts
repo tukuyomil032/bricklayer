@@ -5,10 +5,9 @@ import { sampleCommand } from './sample.js';
 const program = new Command();
 
 program
-  .name('bricklayer')
-  .alias('bl')
+  .name('brick')
   .description('Interactive CLI to scaffold TypeScript CLI projects')
-  .version('0.0.1');
+  .version('1.0.3');
 
 program.addCommand(createCommand());
 program.addCommand(sampleCommand());

@@ -32,17 +32,14 @@ bun add -g @tukuyomil032/bricklayer
 
 ```bash
 # When treating the current directory during command execution as the project's root folder:
-bricklayer create
+brick create
 
 # If you want to specify the project's root folder yourself (we generally recommend using this option):
 # Use the arrow keys (up and down) and the Enter key to navigate to the project's root folder.
-bricklayer create -d
+brick create -d
 
 # You can also specify a project folder directly by entering a relative path after the `-d` option.
-bricklayer create -d ~/Documents/dev/CLI/my-test-project
-
-# available aliases
-bl create
+brick create -d ~/Documents/dev/CLI/my-test-project
 ```
 
 Follow the interactive prompts to configure your project:
