@@ -7,7 +7,7 @@ const program = new Command();
 program
   .name('brick')
   .description('Interactive CLI to scaffold TypeScript CLI projects')
-  .version('1.0.3');
+  .version('1.0.41');
 
 program.addCommand(createCommand());
 program.addCommand(sampleCommand());
