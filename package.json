@@ -1,7 +1,7 @@
 {
   "name": "@tukuyomil032/bricklayer",
   "private": false,
-  "version": "1.0.41",
+  "version": "1.0.42",
   "description": "Interactive TypeScript CLI project scaffolder",
   "type": "module",
   "main": "./dist/index.js",
@@ -14,7 +14,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && chmod +x dist/index.js",
+    "build": "tsc -p tsconfig.json",
+    "postbuild": "node -e \"require('fs').chmodSync('dist/index.js', 0o755)\"",
     "prepare": "husky",
     "prepublishOnly": "pnpm run build",
     "dev": "ts-node --esm src/index.ts",

@@ -31,6 +31,8 @@ export async function getLatestVersions() {
     'eslint-plugin-prettier',
     '@typescript-eslint/parser',
     '@typescript-eslint/eslint-plugin',
+    'typescript-eslint',
+    '@eslint/json',
     'prettier',
     'lint-staged',
     'commander',

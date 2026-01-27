@@ -165,6 +165,19 @@ const hooksTemplates = {
   ],
 } as const;
 
+// Generate scripts object with OS-specific postbuild handling
+function generateScriptsWithPermissions(
+  baseScripts: Record<string, string>
+): Record<string, string> {
+  // Add postbuild script to handle file permissions across platforms
+  // Unix-like systems: set executable permission via chmod
+  // Windows: chmodSync still applies but has no effect (harmless)
+  return {
+    ...baseScripts,
+    postbuild: "node -e \"require('fs').chmodSync('dist/index.js', 0o755)\"",
+  };
+}
+
 // license texts are provided from src/create/licenses.ts
 export function generatePackageJson(answers: ProjectAnswers, versions?: Record<string, string>) {
   const devDeps: Record<string, string> = {
@@ -180,6 +193,8 @@ export function generatePackageJson(answers: ProjectAnswers, versions?: Record<s
   devDeps['@typescript-eslint/parser'] = versions?.['@typescript-eslint/parser'] || '^8.52.0';
   devDeps['@typescript-eslint/eslint-plugin'] =
     versions?.['@typescript-eslint/eslint-plugin'] || '^8.52.0';
+  devDeps['typescript-eslint'] = versions?.['typescript-eslint'] || '^8.52.0';
+  devDeps['@eslint/json'] = versions?.['@eslint/json'] || '^0.1.1';
   devDeps['prettier'] = versions?.['prettier'] || '^3.7.4';
 
   // Husky should only be added when requested (useHusky)
@@ -228,21 +243,23 @@ export function generatePackageJson(answers: ProjectAnswers, versions?: Record<s
       [answers.name]: './dist/index.js',
     },
     files: ['dist', 'README.md'],
-    scripts: Object.assign(
-      {
-        build: 'tsc -p tsconfig.json && chmod +x dist/index.js',
-        prepare: prepareScript,
-        prepublishOnly: buildCmdForManager(mgr),
-        dev: 'ts-node --esm src/index.ts',
-        start: 'node dist/index.js',
-        typecheck: 'tsc --noEmit',
-        lint: 'eslint "src/**/*.ts"',
-        'lint:fix': 'eslint "src/**/*.ts" --fix',
-        'lint-staged': 'lint-staged',
-        format: 'prettier --write "src/**/*.ts"',
-        'format:check': 'prettier --check "src/**/*.ts"',
-      },
-      (answers as ProjectAnswers).useHusky ? {} : {}
+    scripts: generateScriptsWithPermissions(
+      Object.assign(
+        {
+          build: 'tsc -p tsconfig.json',
+          prepare: prepareScript,
+          prepublishOnly: buildCmdForManager(mgr),
+          dev: 'ts-node --esm src/index.ts',
+          start: 'node dist/index.js',
+          typecheck: 'tsc --noEmit',
+          lint: 'eslint "src/**/*.ts"',
+          'lint:fix': 'eslint "src/**/*.ts" --fix',
+          'lint-staged': 'lint-staged',
+          format: 'prettier --write "src/**/*.ts"',
+          'format:check': 'prettier --check "src/**/*.ts"',
+        },
+        (answers as ProjectAnswers).useHusky ? {} : {}
+      )
     ),
     keywords: ['cli', 'scaffold', 'typescript', 'generator'],
     author: answers.author,
