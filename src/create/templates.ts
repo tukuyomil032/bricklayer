@@ -184,6 +184,7 @@ export function generatePackageJson(answers: ProjectAnswers, versions?: Record<s
     typescript: versions?.['typescript'] || '^5.7.2',
     'ts-node': versions?.['ts-node'] || '^10.9.1',
     '@types/node': versions?.['@types/node'] || '^22.10.5',
+    '@types/cli-progress': versions?.['@types/cli-progress'] || '^3.11.6',
     'lint-staged': versions?.['lint-staged'] || '^15.2.11',
   };
   // Include ESLint and Prettier by default in generated projects
@@ -206,6 +207,7 @@ export function generatePackageJson(answers: ProjectAnswers, versions?: Record<s
     commander: versions?.['commander'] || '^11.1.0',
     inquirer: versions?.['inquirer'] || '^9.0.0',
     chalk: versions?.['chalk'] || '^5.3.0',
+    'cli-progress': versions?.['cli-progress'] || '^3.12.0',
     ora: versions?.['ora'] || '^8.1.1',
     yargs: versions?.['yargs'] || '^18.0.0',
   };
@@ -218,13 +220,19 @@ export function generatePackageJson(answers: ProjectAnswers, versions?: Record<s
     bun: versions?.['bun'] || '1.3.6',
   };
   function exactVersion(v?: string) {
-    if (!v) return v;
+    if (!v) {
+      return v;
+    }
     const m = v.match(/\d+\.\d+\.\d+/);
     return m ? m[0] : v.replace(/^[^\d]*/, '');
   }
   function buildCmdForManager(m: string) {
-    if (m === 'yarn') return 'yarn build';
-    if (m === 'bun') return 'bun run build';
+    if (m === 'yarn') {
+      return 'yarn build';
+    }
+    if (m === 'bun') {
+      return 'bun run build';
+    }
     return `${m} run build`;
   }
 
@@ -390,43 +398,53 @@ export function generateEditorConfig() {
 }
 
 export function generateEslintConfig() {
-  return `import js from '@eslint/js';
-import globals from 'globals';
-import tseslint from 'typescript-eslint';
-import json from '@eslint/json';
+  return `import eslint from '@eslint/js';
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tsparser from '@typescript-eslint/parser';
+import prettier from 'eslint-plugin-prettier';
+import prettierConfig from 'eslint-config-prettier';
 
 export default [
+  eslint.configs.recommended,
   {
-    ignores: ['dist/**'],
-  },
-
-  {
-    files: ['**/*.{js,mjs,cjs}'],
+    files: ['src/**/*.ts'],
     languageOptions: {
-      globals: globals.node,
-    },
-    ...js.configs.recommended,
-  },
-
-  {
-    files: ['**/*.{ts,mts,cts}'],
-    languageOptions: {
-      globals: globals.node,
-      parser: tseslint.parser,
+      parser: tsparser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        project: './tsconfig.json',
+      },
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+      },
     },
     plugins: {
-      '@typescript-eslint': tseslint.plugin,
+      '@typescript-eslint': tseslint,
+      prettier: prettier,
     },
     rules: {
       ...tseslint.configs.recommended.rules,
+      ...prettierConfig.rules,
+      'prettier/prettier': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'no-console': 'off',
     },
   },
-
   {
-    files: ['**/*.json'],
-    language: 'json/json',
-    plugins: { json },
-    ...json.configs.recommended,
+    ignores: ['dist/**', 'node_modules/**', '*.js'],
   },
 ];
 `;
@@ -450,7 +468,9 @@ export async function generateLicenseText(
 
   const key = keyMap[license] || 'MIT';
   const textTemplate = (LICENSE_TEXTS && LICENSE_TEXTS[key]) || '';
-  if (!textTemplate) return `MIT License\n\nCopyright (c) ${year} ${author}`;
+  if (!textTemplate) {
+    return `MIT License\n\nCopyright (c) ${year} ${author}`;
+  }
 
   // Common placeholder patterns to replace in license text files.
   // Support multiple variants users may paste: [year], <YEAR>, {{year}}, {yyyy}, etc.

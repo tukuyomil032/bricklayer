@@ -96,7 +96,7 @@ function runCommandWithProgress(command: string, cwd: string): Promise<void> {
     const tickInterval = 150;
     const maxHold = 95;
 
-    const timer = setInterval(() => {
+    const timer = setInterval((): void => {
       const elapsed = Date.now() - start;
       const target = maxHold * (1 - Math.exp(-elapsed / 6000));
       const sinceOutput = lastOutputAt ? Date.now() - lastOutputAt : Infinity;
@@ -108,7 +108,9 @@ function runCommandWithProgress(command: string, cwd: string): Promise<void> {
         lastRenderedFloor = floor;
         try {
           bar.update(floor);
-        } catch {}
+        } catch {
+          // Ignore update errors during progress
+        }
       }
     }, tickInterval);
 
@@ -130,26 +132,31 @@ function runCommandWithProgress(command: string, cwd: string): Promise<void> {
         lastRenderedFloor = floor;
         try {
           bar.update(floor);
-        } catch {}
+        } catch {
+          // Ignore update errors
+        }
       }
     };
 
-    if (child.stdout)
+    if (child.stdout) {
       child.stdout.on('data', (c) => {
         stdoutChunks.push(Buffer.from(c));
         onOutput();
       });
-    if (child.stderr)
+    }
+    if (child.stderr) {
       child.stderr.on('data', (c) => {
         stderrChunks.push(Buffer.from(c));
         onOutput();
       });
-
+    }
     child.on('error', (err) => {
       clearInterval(timer);
       try {
         bar.stop();
-      } catch {}
+      } catch {
+        // Ignore stop errors
+      }
       reject(err);
     });
 
@@ -157,13 +164,15 @@ function runCommandWithProgress(command: string, cwd: string): Promise<void> {
       clearInterval(timer);
 
       const finishInterval = 40; // ms
-      const finishTimer = setInterval(() => {
+      const finishTimer = setInterval((): void => {
         const remaining = 100 - progress;
         if (remaining <= 0.5) {
           try {
             bar.update(100);
             bar.stop();
-          } catch {}
+          } catch {
+            // Ignore final update errors
+          }
           clearInterval(finishTimer);
 
           if (code === 0) {
@@ -181,7 +190,9 @@ function runCommandWithProgress(command: string, cwd: string): Promise<void> {
           lastRenderedFloor = floor;
           try {
             bar.update(floor);
-          } catch {}
+          } catch {
+            // Ignore update errors
+          }
         }
       }, finishInterval);
     });

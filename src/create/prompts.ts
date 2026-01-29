@@ -1,6 +1,8 @@
 import inquirer from 'inquirer';
 import Enquirer from 'enquirer';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Select: any = (Enquirer as any).Select || (Enquirer as any).default?.Select;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Input: any = (Enquirer as any).Input || (Enquirer as any).default?.Input;
 import chalk from 'chalk';
 import readline from 'readline';

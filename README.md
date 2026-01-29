@@ -52,9 +52,9 @@ $ brick create -d ~/Documents/dev/CLI/my-test-project
 
 ## Available Options
 
-- ``-h --help`` - display help for command
-- ``-V --version`` - output the version number
-- ``-d --destination`` - Specify the project creation directory
+- `-h --help` - display help for command
+- `-V --version` - output the version number
+- `-d --destination` - Specify the project creation directory
   - This option can be used either to manually select the directory path where the project will be created, or to specify a relative path by entering it directly after “-d”.
 
 Follow the interactive prompts to configure your project:
