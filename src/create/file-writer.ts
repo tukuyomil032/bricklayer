@@ -78,11 +78,14 @@ export async function writeProjectFiles(
   if (answers.useHusky) {
     await fs.writeFile(
       path.join(targetDir, '.husky', 'pre-commit'),
-      templates.generatePreCommitHook()
+      templates.generatePreCommitHook(answers.packageManager)
     );
     progressBar.update(++completed);
 
-    await fs.writeFile(path.join(targetDir, '.husky', 'pre-push'), templates.generatePrePushHook());
+    await fs.writeFile(
+      path.join(targetDir, '.husky', 'pre-push'),
+      templates.generatePrePushHook(answers.packageManager)
+    );
     progressBar.update(++completed);
   }
 

@@ -156,13 +156,42 @@ const staticTemplates = {
 } as const;
 
 const hooksTemplates = {
-  'pre-commit': ['#!/bin/sh', '. "$(dirname "$0")/_/husky.sh"', '', 'pnpm run lint-staged'],
-  'pre-push': [
-    '#!/bin/sh',
-    '. "$(dirname "$0")/_/husky.sh"',
-    '',
-    'pnpm run lint && pnpm run format:check',
-  ],
+  pnpm: {
+    'pre-commit': ['#!/bin/sh', '. "$(dirname "$0")/_/husky.sh"', '', 'pnpm run lint-staged'],
+    'pre-push': [
+      '#!/bin/sh',
+      '. "$(dirname "$0")/_/husky.sh"',
+      '',
+      'pnpm run lint && pnpm run format:check',
+    ],
+  },
+  npm: {
+    'pre-commit': ['#!/bin/sh', '. "$(dirname "$0")/_/husky.sh"', '', 'npm run lint-staged'],
+    'pre-push': [
+      '#!/bin/sh',
+      '. "$(dirname "$0")/_/husky.sh"',
+      '',
+      'npm run lint && npm run format:check',
+    ],
+  },
+  yarn: {
+    'pre-commit': ['#!/bin/sh', '. "$(dirname "$0")/_/husky.sh"', '', 'yarn lint-staged'],
+    'pre-push': [
+      '#!/bin/sh',
+      '. "$(dirname "$0")/_/husky.sh"',
+      '',
+      'yarn lint && yarn format:check',
+    ],
+  },
+  bun: {
+    'pre-commit': ['#!/bin/sh', '. "$(dirname "$0")/_/husky.sh"', '', 'bun run lint-staged'],
+    'pre-push': [
+      '#!/bin/sh',
+      '. "$(dirname "$0")/_/husky.sh"',
+      '',
+      'bun run lint && bun run format:check',
+    ],
+  },
 } as const;
 
 // Generate scripts object with OS-specific postbuild handling
@@ -349,13 +378,21 @@ export function generateGitignore() {
     : staticTemplates.gitignore;
 }
 
-export function generatePreCommitHook() {
-  const hook = hooksTemplates['pre-commit'];
+function pickManagerKey(mgr?: string) {
+  const m = (mgr || 'pnpm').toLowerCase();
+  if (m === 'npm' || m === 'yarn' || m === 'bun' || m === 'pnpm') return m;
+  return 'pnpm';
+}
+
+export function generatePreCommitHook(packageManager?: string) {
+  const key = pickManagerKey(packageManager);
+  const hook = (hooksTemplates as any)[key]['pre-commit'];
   return Array.isArray(hook) ? hook.join('\n') : hook;
 }
 
-export function generatePrePushHook() {
-  const hook = hooksTemplates['pre-push'];
+export function generatePrePushHook(packageManager?: string) {
+  const key = pickManagerKey(packageManager);
+  const hook = (hooksTemplates as any)[key]['pre-push'];
   return Array.isArray(hook) ? hook.join('\n') : hook;
 }
 
